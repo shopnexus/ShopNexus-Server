@@ -99,7 +99,7 @@ model ProductModel {
   list_price  Decimal @db.Decimal(10, 2)
 
   images   Image[]
-  tags     Tag[]
+  tags     ProductOnTag[]
   brand    Brand           @relation(fields: [brand_id], references: [id], onUpdate: Cascade, onDelete: NoAction)
   products Product[]
   sales    Sale[]
@@ -133,12 +133,21 @@ model Sale {
   product_model ProductModel? @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
 }
 
+model ProductOnTag {
+  product_model_id Bytes
+  tag_name         String
+  product_model    ProductModel @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  tag              Tag          @relation(fields: [tag_name], references: [tag_name], onUpdate: Cascade, onDelete: Cascade)
+
+  @@id([product_model_id, tag_name])
+}
+
 model Tag {
   tag_name    String  @id
   name        String
   description String?
 
-  productModels ProductModel[]
+  productModels ProductOnTag[]
   sales         Sale[]
 }
 

@@ -43,8 +43,20 @@ Table Address {
 Table Cart {
   id Bytes [pk]
   user_account_id Bytes [unique, not null]
+  products ProductOnCart [not null]
   user_account UserAccount [not null]
-  productModels ProductModel [not null]
+}
+
+Table ProductOnCart {
+  cart_id Bytes [not null]
+  product_model_id Bytes [not null]
+  quantity Int [not null]
+  cart Cart [not null]
+  productModel ProductModel [not null]
+
+  indexes {
+    (cart_id, product_model_id) [pk]
+  }
 }
 
 Table Brand {
@@ -62,11 +74,11 @@ Table ProductModel {
   description String
   list_price Decimal [not null]
   images Image [not null]
-  tags Tag [not null]
+  tags ProductOnTag [not null]
   brand Brand [not null]
   products Product [not null]
   sales Sale [not null]
-  carts Cart [not null]
+  carts ProductOnCart [not null]
 }
 
 Table Product {
@@ -79,19 +91,35 @@ Table Product {
 
 Table Sale {
   id Bytes [pk]
-  product_model_id Bytes [not null]
+  tag_name String
+  product_model_id Bytes
   start_date DateTime [default: `now()`, not null]
   end_date DateTime [not null]
   quantity Int [not null]
-  price Decimal [not null]
+  used Int [not null, default: 0]
+  discount_percent Int
+  discount_price Decimal
+  tag Tag
+  product_model ProductModel
+}
+
+Table ProductOnTag {
+  product_model_id Bytes [not null]
+  tag_name String [not null]
   product_model ProductModel [not null]
+  tag Tag [not null]
+
+  indexes {
+    (product_model_id, tag_name) [pk]
+  }
 }
 
 Table Tag {
-  id Bytes [pk]
+  tag_name String [pk]
   name String [not null]
   description String
-  productModels ProductModel [not null]
+  productModels ProductOnTag [not null]
+  sales Sale [not null]
 }
 
 Table Invoice {
@@ -134,16 +162,6 @@ Table Image {
   productModel ProductModel
 }
 
-Table CartToProductModel {
-  productmodelsId Bytes [ref: > ProductModel.id]
-  cartsId Bytes [ref: > Cart.id]
-}
-
-Table ProductModelToTag {
-  tagsId Bytes [ref: > Tag.id]
-  productmodelsId Bytes [ref: > ProductModel.id]
-}
-
 Enum Role {
   USER
   SHOP
@@ -169,11 +187,21 @@ Ref: Address.user_account_id > UserAccount.id [delete: Cascade]
 
 Ref: Cart.user_account_id - UserAccount.id [delete: Cascade]
 
+Ref: ProductOnCart.cart_id > Cart.id [delete: Cascade]
+
+Ref: ProductOnCart.product_model_id > ProductModel.id [delete: No Action]
+
 Ref: ProductModel.brand_id > Brand.id [delete: No Action]
 
 Ref: Product.product_model_id > ProductModel.id [delete: No Action]
 
+Ref: Sale.tag_name > Tag.tag_name [delete: Cascade]
+
 Ref: Sale.product_model_id > ProductModel.id [delete: Cascade]
+
+Ref: ProductOnTag.product_model_id > ProductModel.id [delete: Cascade]
+
+Ref: ProductOnTag.tag_name > Tag.tag_name [delete: Cascade]
 
 Ref: Invoice.user_account_id > UserAccount.id [delete: Cascade]
 
