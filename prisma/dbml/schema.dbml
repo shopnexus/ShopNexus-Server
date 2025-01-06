@@ -1,0 +1,186 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Account {
+  id Bytes [pk]
+  username String [not null]
+  password String [not null]
+  role Role [not null]
+  user_account UserAccount
+  shop_account ShopAccount
+}
+
+Table UserAccount {
+  id Bytes [pk]
+  email String [unique, not null]
+  phone String [unique, not null]
+  default_address_id Bytes [unique, not null]
+  full_name String
+  gender Int [not null]
+  account Account [not null]
+  addresses Address [not null]
+  cart Cart
+  invoices Invoice [not null]
+}
+
+Table ShopAccount {
+  id Bytes [pk]
+  account Account [not null]
+}
+
+Table Address {
+  id Bytes [pk]
+  user_account_id Bytes [not null]
+  address String [not null]
+  city String [not null]
+  province String [not null]
+  country String [not null]
+  postal_code String [not null]
+  user_account UserAccount
+}
+
+Table Cart {
+  id Bytes [pk]
+  user_account_id Bytes [unique, not null]
+  user_account UserAccount [not null]
+  productModels ProductModel [not null]
+}
+
+Table Brand {
+  id Bytes [pk]
+  name String [not null]
+  description String
+  images Image [not null]
+  productModels ProductModel [not null]
+}
+
+Table ProductModel {
+  id Bytes [pk]
+  brand_id Bytes [not null]
+  name String [not null]
+  description String
+  list_price Decimal [not null]
+  images Image [not null]
+  tags Tag [not null]
+  brand Brand [not null]
+  products Product [not null]
+  sales Sale [not null]
+  carts Cart [not null]
+}
+
+Table Product {
+  serial_id Bytes [pk]
+  product_model_id Bytes [not null]
+  entry_date DateTime [default: `now()`, not null]
+  update_date DateTime [not null]
+  product_model ProductModel [not null]
+}
+
+Table Sale {
+  id Bytes [pk]
+  product_model_id Bytes [not null]
+  start_date DateTime [default: `now()`, not null]
+  end_date DateTime [not null]
+  quantity Int [not null]
+  price Decimal [not null]
+  product_model ProductModel [not null]
+}
+
+Table Tag {
+  id Bytes [pk]
+  name String [not null]
+  description String
+  productModels ProductModel [not null]
+}
+
+Table Invoice {
+  id Bytes [pk]
+  user_account_id Bytes [not null]
+  address String [not null]
+  total Decimal [not null]
+  payment_method PaymentMethod [not null]
+  create_date DateTime [not null]
+  user_account UserAccount [not null]
+  items InvoiceItem [not null]
+  transaction Transaction
+}
+
+Table InvoiceItem {
+  id Bytes [pk]
+  invoice_id Bytes [not null]
+  product_serial_id Bytes [not null]
+  quantity Int [not null]
+  price Decimal [not null]
+  totalPrice Decimal [not null]
+  invoice Invoice [not null]
+}
+
+Table Transaction {
+  id Bytes [pk]
+  status TransactionStatus [not null]
+  payment_method PaymentMethod [not null]
+  invoice_id Bytes [unique, not null]
+  date_created DateTime [default: `now()`, not null]
+  date_expired DateTime [not null]
+  invoice Invoice [not null]
+}
+
+Table Image {
+  url String [pk]
+  brand_id Bytes
+  product_model_id Bytes
+  brand Brand
+  productModel ProductModel
+}
+
+Table CartToProductModel {
+  productmodelsId Bytes [ref: > ProductModel.id]
+  cartsId Bytes [ref: > Cart.id]
+}
+
+Table ProductModelToTag {
+  tagsId Bytes [ref: > Tag.id]
+  productmodelsId Bytes [ref: > ProductModel.id]
+}
+
+Enum Role {
+  USER
+  SHOP
+}
+
+Enum TransactionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+Enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+}
+
+Ref: UserAccount.id - Account.id [delete: Cascade]
+
+Ref: ShopAccount.id - Account.id [delete: Cascade]
+
+Ref: Address.user_account_id > UserAccount.id [delete: Cascade]
+
+Ref: Cart.user_account_id - UserAccount.id [delete: Cascade]
+
+Ref: ProductModel.brand_id > Brand.id [delete: No Action]
+
+Ref: Product.product_model_id > ProductModel.id [delete: No Action]
+
+Ref: Sale.product_model_id > ProductModel.id [delete: Cascade]
+
+Ref: Invoice.user_account_id > UserAccount.id [delete: Cascade]
+
+Ref: InvoiceItem.invoice_id > Invoice.id [delete: Cascade]
+
+Ref: Transaction.invoice_id - Invoice.id [delete: Cascade]
+
+Ref: Image.brand_id > Brand.id
+
+Ref: Image.product_model_id > ProductModel.id [delete: Cascade]

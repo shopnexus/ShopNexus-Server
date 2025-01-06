@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+//===== ACCOUNT =====
+
+model Account {
+  id       Bytes  @id
+  username String @db.VarChar(50)
+  password String @db.VarChar(100)
+  role     Role
+
+  user_account UserAccount?
+  shop_account ShopAccount?
+}
+
+model UserAccount {
+  id                 Bytes  @id
+  email              String @unique @db.VarChar(255)
+  phone              String @unique
+  default_address_id Bytes  @unique
+
+  full_name String? @db.VarChar(100)
+  gender    Int
+
+  account   Account   @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  addresses Address[]
+  cart      Cart?
+  invoices  Invoice[]
+}
+
+model ShopAccount {
+  id Bytes @id
+
+  account Account @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // products Product[]
+  // images Image[]
+}
+
+//===== USER =====
+
+model Address {
+  id              Bytes  @id
+  user_account_id Bytes
+  address         String
+  city            String
+  province        String
+  country         String
+  postal_code     String
+
+  user_account UserAccount? @relation(fields: [user_account_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model Cart {
+  id              Bytes @id
+  user_account_id Bytes @unique
+
+  products     ProductOnCart[]
+  user_account UserAccount     @relation(fields: [user_account_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model ProductOnCart {
+  cart_id          Bytes
+  product_model_id Bytes
+  quantity         Int
+
+  cart         Cart         @relation(fields: [cart_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  productModel ProductModel @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: NoAction)
+
+  @@id([cart_id, product_model_id])
+}
+
+//===== PRODUCT =====
+
+model Brand {
+  id          Bytes   @id
+  name        String
+  description String?
+
+  images        Image[]
+  productModels ProductModel[]
+}
+
+model ProductModel {
+  id          Bytes   @id
+  brand_id    Bytes
+  name        String
+  description String?
+  list_price  Decimal @db.Decimal(10, 2)
+
+  images   Image[]
+  tags     Tag[]
+  brand    Brand           @relation(fields: [brand_id], references: [id], onUpdate: Cascade, onDelete: NoAction)
+  products Product[]
+  sales    Sale[]
+  carts    ProductOnCart[]
+}
+
+model Product {
+  serial_id        Bytes    @id
+  product_model_id Bytes
+  // shop_id     Bytes // Remove this because current web is single shop (but multi manager accounts)
+  entry_date       DateTime @default(now())
+  update_date      DateTime @updatedAt
+
+  // shop ShopAccount @relation(fields: [shop_id], references: [id])
+  product_model ProductModel @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: NoAction)
+}
+
+// Note: Sale data should be removed when reach end_date
+model Sale {
+  id               Bytes    @id
+  tag_name         String? // either tag_name or product_model_id
+  product_model_id Bytes?
+  start_date       DateTime @default(now())
+  end_date         DateTime
+  quantity         Int // 0 to unlimited
+  used             Int      @default(0)
+  discount_percent Int? // either discount_percent or discount_price
+  discount_price   Decimal? @db.Decimal(10, 2)
+
+  tag           Tag?          @relation(fields: [tag_name], references: [tag_name], onUpdate: Cascade, onDelete: Cascade)
+  product_model ProductModel? @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model Tag {
+  tag_name    String  @id
+  name        String
+  description String?
+
+  productModels ProductModel[]
+  sales         Sale[]
+}
+
+// ===== PAYMENT =====
+// Note: Invoice data should not relation with anything else except invoice related items
+
+model Invoice {
+  id              Bytes         @id
+  user_account_id Bytes
+  address         String
+  total           Decimal       @db.Decimal(10, 2)
+  payment_method  PaymentMethod
+  create_date     DateTime
+
+  user_account UserAccount   @relation(fields: [user_account_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  items        InvoiceItem[]
+  transaction  Transaction?
+}
+
+model InvoiceItem {
+  id                Bytes   @id
+  invoice_id        Bytes
+  product_serial_id Bytes
+  quantity          Int
+  price             Decimal @db.Decimal(10, 2) // Single product price
+  totalPrice        Decimal @db.Decimal(10, 2) // Final price (applied discount)
+
+  invoice Invoice @relation(fields: [invoice_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model Transaction {
+  id             Bytes             @id
+  status         TransactionStatus
+  payment_method PaymentMethod
+  invoice_id     Bytes             @unique
+  date_created   DateTime          @default(now()) @db.Timestamp(0)
+  date_expired   DateTime          @db.Timestamp(0)
+
+  invoice Invoice @relation(fields: [invoice_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// ===== OTHER =====
+
+model Image {
+  url              String @id
+  // shop_id Bytes?
+  brand_id         Bytes?
+  product_model_id Bytes?
+
+  // shop ShopAccount? @relation(fields: [shop_id], references: [id])
+  brand        Brand?        @relation(fields: [brand_id], references: [id])
+  productModel ProductModel? @relation(fields: [product_model_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  SHOP
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+}

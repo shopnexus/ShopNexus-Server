@@ -1,0 +1,19 @@
+{
+	"name": "shopnexus-server",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"prisma": "^6.1.0",
+		"prisma-dbml-generator": "^0.12.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@prisma/client": "^6.1.0"
+	},
+	"scripts": {
+		"prisma:generate": "prisma generate"
+	}
+}
