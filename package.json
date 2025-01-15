@@ -1,19 +1,26 @@
 {
-	"name": "shopnexus-server",
-	"module": "index.ts",
-	"type": "module",
-	"devDependencies": {
-		"@types/bun": "latest",
-		"prisma": "^6.1.0",
-		"prisma-dbml-generator": "^0.12.0"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	},
-	"dependencies": {
-		"@prisma/client": "^6.1.0"
-	},
-	"scripts": {
-		"prisma:generate": "prisma generate"
-	}
+  "name": "server",
+  "version": "1.0.0",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "nodemon --inspect src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "express": "^4.21.2",
+    "server": "file:"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "nodemon": "^3.1.9",
+    "prisma": "^6.2.1",
+    "prisma-dbml-generator": "^0.12.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
 }
